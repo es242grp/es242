@@ -10,20 +10,27 @@
  * Selections should be generated in lexicographic order.
  * a[0..k-1] is the smallest selection and a[n-k..n-1] is the largest.
  */
-void generate_selections(int a[], int n, int k, int b[], void *data, void (*process_selection)(int *b, int k, void *data))
-{
-    b[0] = 2; b[1] = 1;
-    process_selection(b, 2, data);
-    b[0] = 2; b[1] = 6;
-    process_selection(b, 2, data);
-    b[0] = 2; b[1] = 5;
-    process_selection(b, 2, data);
-    b[0] = 1; b[1] = 6;
-    process_selection(b, 2, data);
-    b[0] = 1; b[1] = 5;
-    process_selection(b, 2, data);
-    b[0] = 6; b[1] = 5;
-    process_selection(b, 2, data);
+void process_selection(int *b, int k, void *data) {
+    for (int i = 0; i < k; i++) {
+        printf("%d ", b[i]);
+    }
+    printf("\n");
+}
+
+void generate_selections_0(int a[], int n, int k, int b[], int pos, int idx, void *data, void (*process_selection)(int *b, int k, void *data)) {
+    if (pos == k) {
+        process_selection(b, k, data);
+        return;
+    }
+
+    for (int i = idx; i < n; i++) {
+        b[pos] = a[i];
+        generate_selections_0(a, n, k, b, pos + 1, i + 1, data, process_selection);
+    }
+}
+
+void generate_selections(int a[], int n, int k, int b[], void *data, void (*process_selection)(int *b, int k, void *data)) {
+    generate_selections_0(a, n, k, b, 0, 0, data, process_selection);
 }
 
 /*
@@ -34,26 +41,91 @@ void generate_selections(int a[], int n, int k, int b[], void *data, void (*proc
  * The dictionary parameter is an array of words, sorted in dictionary order.
  * nwords is the number of words in this dictionary.
  */
-void generate_splits(const char *source, const char *dictionary[], int nwords, char buf[], void *data, void (*process_split)(char buf[], void *data))
-{
-    strcpy(buf, "art is toil");
-    process_split(buf, data);
-    strcpy(buf, "artist oil");
-    process_split(buf, data);
+#include <stdio.h>
+#include <string.h>
+
+int IsWord(const char *str, const char *dict[], int nwords) {
+    for (int i = 0; i < nwords; i++) {
+        if (strcmp(str, dict[i]) == 0) {
+            return 1;
+        }
+    }
+    return 0; 
+}
+
+void generate_splits_recursive(const char *source, const char *dict[], int nwords, char buf[], int buf_index, void *data, void (*process_split)(char buf[], void *data)) {
+    int len = strlen(source);
+    for (int i = 1; i <= len; i++) {
+        strncpy(buf + buf_index, source, i);
+        buf[buf_index + i] = '\0';
+
+        if (IsWord(buf + buf_index, dict, nwords)) {
+            if (i == len) {
+                process_split(buf, data);
+            } else {
+                buf[buf_index + i] = ' '; 
+                generate_splits_recursive(source + i, dict, nwords, buf, buf_index + i + 1, data, process_split);
+            }
+        }
+    }
+}
+
+void generate_splits(const char *source, const char *dict[], int nwords, char buf[], void *data, void (*process_split)(char buf[], void *data)) {
+    generate_splits_recursive(source, dict, nwords, buf, 0, data, process_split);
+}
+
+void process_split_example(char buf[], void *data) {
+    printf("%s\n", buf);
 }
 
 /*
  * Transform a[] so that it becomes the previous permutation of the elements in it.
  * If a[] is the first permutation, leave it unchanged.
  */
-void previous_permutation(int a[], int n)
-{
-    a[0] = 1;
-    a[1] = 5;
-    a[2] = 4;
-    a[3] = 6;
-    a[4] = 3;
-    a[5] = 2;
+#include <stdio.h>
+#include <stdbool.h>
+
+int compare(const void *a, const void *b) {
+    return (*(int *)a - *(int *)b);
+}
+
+bool previous_permutation(int a[], int n) {
+    int i = n - 2;
+    while (i >= 0 && a[i] <= a[i + 1]) {
+        i--;
+    }
+
+    if (i < 0) {
+        return false;
+    }
+
+    int j = n - 1;
+    while (a[j] >= a[i]) {
+        j--;
+    }
+
+    int temp = a[i];
+    a[i] = a[j];
+    a[j] = temp;
+
+    int left = i + 1;
+    int right = n - 1;
+    while (left < right) {
+        temp = a[left];
+        a[left] = a[right];
+        a[right] = temp;
+        left++;
+        right--;
+    }
+
+    return true;
+}
+
+void print_array(int a[], int n) {
+    for (int i = 0; i < n; i++) {
+        printf("%d ", a[i]);
+    }
+    printf("\n");
 }
 
 /* Write your tests here. Use the previous assignment for reference. */
